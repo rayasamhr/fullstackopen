@@ -1,18 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import ReactDOM from 'react-dom';
 import Numbers from './components/Numbers';
 import './index.css';
 
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: 'Arto Hellas', phone: '040-123456', id: 1 },
-    { name: 'Ada Lovelace', phone: '39-44-5323523', id: 2 },
-    { name: 'Dan Abramov', phone: '12-43-234345', id: 3 },
-    { name: 'Mary Poppendieck', phone: '39-23-6423122', id: 4 }
-  ])
-  const [personsShown, setPersonsShown] = useState([...persons])
+  const [persons, setPersons] = useState([])
+  const [personsShown, setPersonsShown] = useState([])
   const [newName, setNewName] = useState('')
   const [newPhone, setNewPhone] = useState('')
+
+  useEffect(() => {
+    console.log('effect')
+    axios
+      .get('http://localhost:3001/persons')
+      .then(response => {
+        console.log(response)
+        setPersons(response.data)
+        setPersonsShown(response.data)
+      })
+  }, [])
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -40,14 +47,14 @@ const App = () => {
 
   const filterInputs = (event) => {
     setPersonsShown(persons.filter(person => person.name.toLowerCase()
-    .includes(event.target.value.toLowerCase())));
+      .includes(event.target.value.toLowerCase())));
   }
 
   return (
     <>
       <div>
         Filter
-        <input onChange={filterInputs}/>
+        <input onChange={filterInputs} />
       </div>
       <h1>Phonebook</h1>
       <form onSubmit={handleSubmit}>
