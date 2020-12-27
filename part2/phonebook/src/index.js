@@ -2,59 +2,67 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ReactDOM from 'react-dom';
 import Numbers from './components/Numbers';
+import PersonService from './services/persons';
 import './index.css';
 
 const App = () => {
   const [persons, setPersons] = useState([])
-  const [personsShown, setPersonsShown] = useState([])
+  const [filterValue, setFilterValue] = useState('')
   const [newName, setNewName] = useState('')
   const [newPhone, setNewPhone] = useState('')
+  const filteredPersons = persons.filter(person => 
+    person.name.toLowerCase().includes(filterValue.toLowerCase()));
 
   useEffect(() => {
-    console.log('effect')
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        console.log(response)
-        setPersons(response.data)
-        setPersonsShown(response.data)
+    PersonService.getAll()
+      .then(data => {
+        setPersons(data);
       })
-  }, [])
+  }, [persons])
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    console.log('before', persons)
+
+    const personObject = {
+      name: newName,
+      phone: newPhone
+    }
+
     if (newName === '' || newPhone === '') {
       alert('A required field is empty.')
     } else if (persons.some(person => person.name === newName)) {
-      alert(`There already exists a person named ${newName}!`);
-    } else if (persons.some(person => person.phone === newPhone)) {
-      alert(`There already exists a person with this phone number: ${newPhone}!`);
+      if (window.confirm(`${newName} is already added to the book, replace the old number with a new one?`)) {
+        const p = persons.find(person => person.name === newName);
+        PersonService.updatePerson(p.id, personObject)
+          .then(data => {
+            setPersons(persons.map(person => person.id !== p.id ? person : data))
+            setNewName('');
+            setNewPhone('')
+          })
+      }
     } else {
-      setPersons(persons.concat({
-        name: newName,
-        phone: newPhone,
-        id: persons.length + 1,
-      }));
+      PersonService.createPerson(personObject)
+        .then(data => {
+          setPersons(persons.concat(data))
+          setNewName('');
+          setNewPhone('');
+        }).catch(err => console.log(err))
     }
-    setNewName('');
-    setNewPhone('');
   }
 
   const handleChange = (func) => (event) => {
     func(event.target.value);
   }
 
-  const filterInputs = (event) => {
-    setPersonsShown(persons.filter(person => person.name.toLowerCase()
-      .includes(event.target.value.toLowerCase())));
+  const filter = val => {
+    setFilterValue(val);
   }
 
   return (
     <>
       <div>
         Filter
-        <input onChange={filterInputs} />
+        <input value={filterValue} onChange={handleChange(filter)} />
       </div>
       <h1>Phonebook</h1>
       <form onSubmit={handleSubmit}>
@@ -70,10 +78,9 @@ const App = () => {
           </button>
         </div>
       </form>
-      <Numbers persons={personsShown} />
+      <Numbers persons={filteredPersons} setPersons={setPersons} />
     </>
   )
 }
 
 ReactDOM.render(<App />, document.getElementById('root'));
-
