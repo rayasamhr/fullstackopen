@@ -5,11 +5,28 @@ import Numbers from './components/Numbers';
 import PersonService from './services/persons';
 import './index.css';
 
+const Notification = ({message, notifType}) => {
+  if (message === null) {
+    return null;
+  }
+  return(
+    <div className={notifType}>
+      {message}
+    </div>
+  )
+}
+
 const App = () => {
+  //State hooks
   const [persons, setPersons] = useState([])
   const [filterValue, setFilterValue] = useState('')
   const [newName, setNewName] = useState('')
   const [newPhone, setNewPhone] = useState('')
+  const [notif, setNotif] = useState({
+    message: null,
+    notifType: "success"
+  })
+
   const filteredPersons = persons.filter(person => 
     person.name.toLowerCase().includes(filterValue.toLowerCase()));
 
@@ -38,6 +55,16 @@ const App = () => {
             setPersons(persons.map(person => person.id !== p.id ? person : data))
             setNewName('');
             setNewPhone('')
+            setNotif({message: `${newName} has been updated successfully`, notifType: "success"})
+            setTimeout(() => {
+              setNotif({message: null, notifType:"success"})
+            }, 5000)
+          }).catch(err => {
+            console.log(err);
+            setNotif({message: `${newName} has already been removed from the server`, notifType: "error"})
+            setTimeout(() => {
+              setNotif({message: null, notifType:"success"})
+            }, 5000)
           })
       }
     } else {
@@ -46,6 +73,10 @@ const App = () => {
           setPersons(persons.concat(data))
           setNewName('');
           setNewPhone('');
+          setNotif({message: `${newName} has been added successfully`, notifType: "success"})
+          setTimeout(() => {
+            setNotif({message: null, notifType:"success"})
+          }, 5000)
         }).catch(err => console.log(err))
     }
   }
@@ -60,6 +91,7 @@ const App = () => {
 
   return (
     <>
+      <Notification message={notif.message} notifType={notif.notifType} />
       <div>
         Filter
         <input value={filterValue} onChange={handleChange(filter)} />
